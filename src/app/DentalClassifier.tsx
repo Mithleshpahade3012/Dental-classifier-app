@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/navbar";
+import Image from 'next/image';
 
 export default function DentalClassifier() {
   const [image, setImage] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export default function DentalClassifier() {
                 <p className="text-gray-600">Click to Upload Image</p>
                 <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
-                {image && <img src={image} alt="Uploaded" className="rounded-lg mt-4 mb-4 shadow-md w-[200px]" />}
+                {image && <image src={image} alt="Uploaded" className="rounded-lg mt-4 mb-4 shadow-md w-[200px]" />}
                 <br></br>
                 <Button onClick={handlePredict} disabled={loading} className="w-full bg-blue-700 hover:bg-blue-800">
                 {loading ? "Analyzing..." : "🦷 Predict Condition"}
@@ -90,7 +91,7 @@ export default function DentalClassifier() {
                 {prediction.gradcam_base64 && (
                 <div className="flex-shrink-0 text-center">
                     <h2 className="text-xl font-bold mb-2">🩺 Prediction</h2>
-                    <img
+                    <image
                     src={`data:image/png;base64,${prediction.gradcam_base64}`}
                     alt="Grad-CAM"
                     className="rounded-lg shadow-md w-[300px]"
