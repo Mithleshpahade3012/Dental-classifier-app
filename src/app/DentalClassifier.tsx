@@ -9,7 +9,7 @@ import Navbar from "@/components/navbar";
 export default function DentalClassifier() {
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [prediction, setPrediction] = useState<any>(null);
+  const [prediction, setPrediction] = useState<unknown>(null);
   const [loading, setLoading] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
