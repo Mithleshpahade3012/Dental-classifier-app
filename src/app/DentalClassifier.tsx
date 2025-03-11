@@ -7,10 +7,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/navbar";
 import Image from 'next/image';
 
+
+interface PredictionResult {
+  predicted_disease: string;
+  condition: string;
+  confidence: string;
+  advice: string;
+  gradcam_base64?: string;
+}
+
+
 export default function DentalClassifier() {
   const [image, setImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [prediction, setPrediction] = useState<unknown>(null);
+  const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -20,6 +30,8 @@ export default function DentalClassifier() {
       setImage(URL.createObjectURL(uploadedFile));
     }
   };
+
+  
 
   const handlePredict = async () => {
     if (!file) return alert("Please upload an image first.");
@@ -74,7 +86,15 @@ export default function DentalClassifier() {
                 <p className="text-gray-600">Click to Upload Image</p>
                 <input id="file-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
-                {image && <image src={image} alt="Uploaded" className="rounded-lg mt-4 mb-4 shadow-md w-[200px]" />}
+                {image && (
+                  <Image
+                    src={image}
+                    alt="Uploaded"
+                    width={200}
+                    height={200}
+                    className="rounded-lg mt-4 mb-4 shadow-md"
+                  />
+                )}
                 <br></br>
                 <Button onClick={handlePredict} disabled={loading} className="w-full bg-blue-700 hover:bg-blue-800">
                 {loading ? "Analyzing..." : "🦷 Predict Condition"}
@@ -91,10 +111,12 @@ export default function DentalClassifier() {
                 {prediction.gradcam_base64 && (
                 <div className="flex-shrink-0 text-center">
                     <h2 className="text-xl font-bold mb-2">🩺 Prediction</h2>
-                    <image
-                    src={`data:image/png;base64,${prediction.gradcam_base64}`}
-                    alt="Grad-CAM"
-                    className="rounded-lg shadow-md w-[300px]"
+                    <Image
+                      src={`data:image/png;base64,${prediction.gradcam_base64}`}
+                      alt="Grad-CAM"
+                      width={300}
+                      height={300}
+                      className="rounded-lg shadow-md"
                     />
                     <p className="text-sm text-blue-600 mt-1">Heatmap</p>
                 </div>
