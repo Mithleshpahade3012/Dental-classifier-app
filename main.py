@@ -12,11 +12,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to ["http://localhost:3000"] if needed
+    allow_origins=["*"],  # Change to specific frontend URL in production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 # Load the trained model
 MODEL_PATH = "saved_model.h5"
 try:
@@ -43,11 +44,11 @@ def find_best_layer(model):
         if hasattr(layer, 'output_shape') and isinstance(layer.output_shape, tuple):
             if len(layer.output_shape) == 4:  # Ensure it's a convolutional layer
                 return layer.name  # Return the name of the best layer
-    return None  # Instead of returning "Conv_1", return None and handle it properly
+    return "Conv_1"  # Return None if no valid convolutional layer found
 
 
 def get_gradcam(image_array, model, predicted_class):
-    layer_name = find_best_layer(model)
+    layer_name = find_best_layer(model)  # Dynamically find the best convolutional layer
     if not layer_name:
         raise ValueError("No valid convolutional layer found for Grad-CAM.")
 
@@ -62,8 +63,7 @@ def get_gradcam(image_array, model, predicted_class):
 
     grads = tape.gradient(loss, conv_outputs)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
-    
-    conv_outputs = conv_outputs[0].numpy() if isinstance(conv_outputs, tf.Tensor) else conv_outputs[0]
+    conv_outputs = conv_outputs[0].numpy()
     pooled_grads = pooled_grads.numpy()
 
     # Apply weighting
@@ -110,28 +110,24 @@ def encode_image(image_array):
     encoded_image = base64.b64encode(buffer).decode("utf-8")
     return encoded_image
 
-@app.post("/predict/")
+@app.post("/prediction/")
 async def predict(file: UploadFile = File(...)):
     """Predict the dental disease from an uploaded image."""
     try:
         # Read image
         image_data = await file.read()
-        try:
-            image = Image.open(io.BytesIO(image_data)).convert("RGB")
-        except Exception:
-            raise HTTPException(status_code=400, detail="Invalid image format")
-
+        image = Image.open(io.BytesIO(image_data)).convert("RGB")
         image_array = preprocess_image(image)
-
+        
         # Make prediction
         predictions = model.predict(image_array)
         predicted_class_idx = np.argmax(predictions, axis=1)[0]
         confidence = np.max(predictions)
         predicted_disease = CLASS_NAMES[predicted_class_idx]
-
+        
         # Get condition details
         condition = DISEASE_CONDITIONS[predicted_disease]
-
+        
         heatmap = get_gradcam(image_array, model, predicted_class_idx)
         image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         gradcam_image = overlay_gradcam(image_cv, heatmap)
@@ -140,13 +136,13 @@ async def predict(file: UploadFile = File(...)):
 
         return {
             "predicted_disease": predicted_disease,
-            "confidence": f"{int(confidence * 100)}%",
+            "confidence": str(int(confidence * 100)) + "%",
             "condition": condition["condition"],
             "advice": condition["advice"],
-            "gradcam_base64": gradcam_image
+            "gradcam_base64": gradcam_image 
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction error: {e}")
 
 # Run the API
 if __name__ == "__main__":
